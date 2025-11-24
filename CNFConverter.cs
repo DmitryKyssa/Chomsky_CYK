@@ -14,32 +14,21 @@
 
         public void ConvertToCNF()
         {
-            Console.WriteLine("\n--- Step 1: Add new start symbol ---");
-            AddNewStartSymbol();
-            CNFGrammar.Print();
-
-            Console.WriteLine("\n--- Step 2: Eliminate ε-productions ---");
+            Console.WriteLine("\n--- Step 1: Eliminate ε-productions ---");
             EliminateEpsilonProductions();
             CNFGrammar.Print();
 
-            Console.WriteLine("\n--- Step 3: Eliminate unit productions ---");
+            Console.WriteLine("\n--- Step 2: Eliminate unit productions ---");
             EliminateUnitProductions();
             CNFGrammar.Print();
 
-            Console.WriteLine("\n--- Step 4: Replace nonsolitary terminals ---");
+            Console.WriteLine("\n--- Step 3: Replace nonsolitary terminals ---");
             ReplaceNonsolitaryTerminals();
             CNFGrammar.Print();
 
-            Console.WriteLine("\n--- Step 5: Break long productions ---");
+            Console.WriteLine("\n--- Step 4: Break long productions ---");
             BreakLongProductions();
             CNFGrammar.Print();
-        }
-
-        private void AddNewStartSymbol()
-        {
-            char newStart = GetNewNonTerminal();
-            CNFGrammar.AddRule(newStart, StartSymbol.ToString());
-            StartSymbol = newStart;
         }
 
         private void EliminateEpsilonProductions()
