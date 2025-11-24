@@ -1,6 +1,6 @@
 ﻿namespace Chomsky_CYK
 {
-    class CNFConverter
+    internal class CNFConverter
     {
         public Grammar CNFGrammar { get; private set; }
         public char StartSymbol { get; private set; }
@@ -44,16 +44,13 @@
 
         private void EliminateEpsilonProductions()
         {
-            // Find nullable nonterminals
-            var nullable = FindNullable();
+            HashSet<char> nullable = FindNullable();
+            List<(char, string)> rulesToAdd = new List<(char, string)>();
+            List<(char, string)> rulesToRemove = new List<(char, string)>();
 
-            // Remove epsilon productions and add alternatives
-            var rulesToAdd = new List<(char, string)>();
-            var rulesToRemove = new List<(char, string)>();
-
-            foreach (var kvp in CNFGrammar.Rules.ToList())
+            foreach (KeyValuePair<char, List<string>> kvp in CNFGrammar.Rules.ToList())
             {
-                foreach (var production in kvp.Value.ToList())
+                foreach (string? production in kvp.Value.ToList())
                 {
                     if (production == "ε" || production == "")
                     {
@@ -61,9 +58,8 @@
                     }
                     else
                     {
-                        // Generate all combinations by removing nullable symbols
-                        var combinations = GenerateCombinations(production, nullable);
-                        foreach (var combo in combinations)
+                        List<string> combinations = GenerateCombinations(production, nullable);
+                        foreach (string combo in combinations)
                         {
                             if (!string.IsNullOrEmpty(combo) && combo != production)
                             {
@@ -74,33 +70,38 @@
                 }
             }
 
-            foreach (var rule in rulesToRemove)
+            foreach ((char, string) rule in rulesToRemove)
+            {
                 CNFGrammar.RemoveRule(rule.Item1, rule.Item2);
+            }
 
-            foreach (var rule in rulesToAdd)
+            foreach ((char, string) rule in rulesToAdd)
             {
                 if (!CNFGrammar.Rules[rule.Item1].Contains(rule.Item2))
+                {
                     CNFGrammar.AddRule(rule.Item1, rule.Item2);
+                }
             }
         }
 
         private HashSet<char> FindNullable()
         {
-            var nullable = new HashSet<char>();
+            HashSet<char> nullable = [];
             bool changed = true;
 
             while (changed)
             {
                 changed = false;
-                foreach (var kvp in CNFGrammar.Rules)
+                foreach (KeyValuePair<char, List<string>> kvp in CNFGrammar.Rules)
                 {
                     if (nullable.Contains(kvp.Key))
-                        continue;
-
-                    foreach (var production in kvp.Value)
                     {
-                        if (production == "ε" || production == "" ||
-                            production.All(c => nullable.Contains(c)))
+                        continue;
+                    }
+
+                    foreach (string production in kvp.Value)
+                    {
+                        if (production == "ε" || production == "" || production.All(nullable.Contains))
                         {
                             nullable.Add(kvp.Key);
                             changed = true;
@@ -115,16 +116,15 @@
 
         private List<string> GenerateCombinations(string production, HashSet<char> nullable)
         {
-            var result = new List<string> { production };
+            List<string> result = [production];
 
             for (int i = 0; i < production.Length; i++)
             {
                 if (nullable.Contains(production[i]))
                 {
-                    var newResults = new List<string>();
-                    foreach (var str in result)
+                    List<string> newResults = new List<string>();
+                    foreach (string str in result)
                     {
-                        // Find the character at position i in original and remove it
                         int count = 0;
                         for (int j = 0; j < str.Length; j++)
                         {
@@ -134,25 +134,30 @@
                                 {
                                     string newStr = str.Remove(j, 1);
                                     if (!newResults.Contains(newStr))
+                                    {
                                         newResults.Add(newStr);
+                                    }
+
                                     break;
                                 }
                                 count++;
                             }
                         }
-                        // Simple removal
+
                         for (int j = 0; j < str.Length; j++)
                         {
                             string newStr = str.Remove(j, 1);
                             if (str[j] == production[i] && !newResults.Contains(newStr))
+                            {
                                 newResults.Add(newStr);
+                            }
                         }
                     }
                     result.AddRange(newResults);
                 }
             }
 
-            return result.Distinct().ToList();
+            return [.. result.Distinct()];
         }
 
         private void EliminateUnitProductions()
@@ -162,22 +167,20 @@
             while (changed)
             {
                 changed = false;
-                var rulesToAdd = new List<(char, string)>();
-                var rulesToRemove = new List<(char, string)>();
+                List<(char, string)> rulesToAdd = [];
+                List<(char, string)> rulesToRemove = [];
 
-                foreach (var kvp in CNFGrammar.Rules.ToList())
+                foreach (KeyValuePair<char, List<string>> kvp in CNFGrammar.Rules.ToList())
                 {
-                    foreach (var production in kvp.Value.ToList())
+                    foreach (string? production in kvp.Value.ToList())
                     {
-                        // Check if it's a unit production (single nonterminal)
                         if (production.Length == 1 && char.IsUpper(production[0]))
                         {
                             char unitNonTerminal = production[0];
 
-                            // Add all productions of the unit nonterminal
-                            if (CNFGrammar.Rules.ContainsKey(unitNonTerminal))
+                            if (CNFGrammar.Rules.TryGetValue(unitNonTerminal, out List<string>? value))
                             {
-                                foreach (var prod in CNFGrammar.Rules[unitNonTerminal])
+                                foreach (string prod in value)
                                 {
                                     if (!CNFGrammar.Rules[kvp.Key].Contains(prod))
                                     {
@@ -192,23 +195,27 @@
                     }
                 }
 
-                foreach (var rule in rulesToRemove)
+                foreach ((char, string) rule in rulesToRemove)
+                {
                     CNFGrammar.RemoveRule(rule.Item1, rule.Item2);
+                }
 
-                foreach (var rule in rulesToAdd)
+                foreach ((char, string) rule in rulesToAdd)
+                {
                     CNFGrammar.AddRule(rule.Item1, rule.Item2);
+                }
             }
         }
 
         private void ReplaceNonsolitaryTerminals()
         {
-            var terminalMap = new Dictionary<char, char>();
-            var rulesToAdd = new List<(char, string)>();
-            var rulesToModify = new List<(char, string, string)>();
+            Dictionary<char, char> terminalMap = [];
+            List<(char, string)> rulesToAdd = [];
+            List<(char, string, string)> rulesToModify = [];
 
-            foreach (var kvp in CNFGrammar.Rules.ToList())
+            foreach (KeyValuePair<char, List<string>> kvp in CNFGrammar.Rules.ToList())
             {
-                foreach (var production in kvp.Value.ToList())
+                foreach (string? production in kvp.Value.ToList())
                 {
                     if (production.Length > 1)
                     {
@@ -217,17 +224,17 @@
                         for (int i = 0; i < production.Length; i++)
                         {
                             char c = production[i];
-                            if (!char.IsUpper(c)) // Terminal
+                            if (!char.IsUpper(c))
                             {
-                                if (!terminalMap.ContainsKey(c))
+                                if (!terminalMap.TryGetValue(c, out char value))
                                 {
                                     char newNonTerminal = GetNewNonTerminal();
-                                    terminalMap[c] = newNonTerminal;
+                                    value = newNonTerminal;
+                                    terminalMap[c] = value;
                                     rulesToAdd.Add((newNonTerminal, c.ToString()));
                                 }
 
-                                newProduction = newProduction.Replace(c.ToString(),
-                                    terminalMap[c].ToString());
+                                newProduction = newProduction.Replace(c.ToString(), value.ToString());
                             }
                         }
 
@@ -239,10 +246,12 @@
                 }
             }
 
-            foreach (var rule in rulesToAdd)
+            foreach ((char, string) rule in rulesToAdd)
+            {
                 CNFGrammar.AddRule(rule.Item1, rule.Item2);
+            }
 
-            foreach (var rule in rulesToModify)
+            foreach ((char, string, string) rule in rulesToModify)
             {
                 CNFGrammar.RemoveRule(rule.Item1, rule.Item2);
                 CNFGrammar.AddRule(rule.Item1, rule.Item3);
@@ -251,12 +260,12 @@
 
         private void BreakLongProductions()
         {
-            var rulesToAdd = new List<(char, string)>();
-            var rulesToRemove = new List<(char, string)>();
+            List<(char, string)> rulesToAdd = [];
+            List<(char, string)> rulesToRemove = [];
 
-            foreach (var kvp in CNFGrammar.Rules.ToList())
+            foreach (KeyValuePair<char, List<string>> kvp in CNFGrammar.Rules.ToList())
             {
-                foreach (var production in kvp.Value.ToList())
+                foreach (string? production in kvp.Value.ToList())
                 {
                     if (production.Length > 2)
                     {
@@ -265,11 +274,10 @@
 
                         rulesToRemove.Add((kvp.Key, production));
 
-                        // Break into binary productions from left to right
                         while (current.Length > 2)
                         {
                             char newNonTerminal = GetNewNonTerminal();
-                            string firstTwo = current.Substring(0, 2);
+                            string firstTwo = current[..2];
 
                             rulesToAdd.Add((lastNonTerminal, firstTwo[0].ToString() + newNonTerminal));
                             lastNonTerminal = newNonTerminal;
@@ -281,32 +289,40 @@
                 }
             }
 
-            foreach (var rule in rulesToRemove)
+            foreach ((char, string) rule in rulesToRemove)
+            {
                 CNFGrammar.RemoveRule(rule.Item1, rule.Item2);
+            }
 
-            foreach (var rule in rulesToAdd)
+            foreach ((char, string) rule in rulesToAdd)
+            {
                 CNFGrammar.AddRule(rule.Item1, rule.Item2);
+            }
         }
 
         private char GetNewNonTerminal()
         {
-            // First try X, Y, Z, then X0, X1, etc.
-            char[] available = "XYZ".ToCharArray();
+            string available = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
+                .Where(c => !CNFGrammar.Rules.ContainsKey(c))
+                .Aggregate("", (current, c) => current + c);
 
             foreach (char c in available)
             {
                 if (!CNFGrammar.Rules.ContainsKey(c))
+                {
                     return c;
+                }
             }
 
-            // Use numbered nonterminals
             while (true)
             {
                 char candidate = (char)('D' + newNonTerminalCounter);
                 newNonTerminalCounter++;
 
                 if (!CNFGrammar.Rules.ContainsKey(candidate) && candidate <= 'Z')
+                {
                     return candidate;
+                }
             }
         }
     }

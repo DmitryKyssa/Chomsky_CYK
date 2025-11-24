@@ -13,7 +13,7 @@
         {
             if (!Rules.TryGetValue(nonTerminal, out List<string>? value))
             {
-                value = new List<string>();
+                value = [];
                 Rules[nonTerminal] = value;
             }
 

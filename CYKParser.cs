@@ -1,6 +1,6 @@
 ﻿namespace Chomsky_CYK
 {
-    class CYKParser
+    internal class CYKParser
     {
         private Grammar grammar;
         private char startSymbol;
@@ -82,7 +82,7 @@
 
         public void PrintTable()
         {
-            for (int length = n; length >= 1; length--)
+            for (int length = 1; length <= n; length++)
             {
                 Console.Write($"Length {length}: ");
                 for (int i = 0; i <= n - length; i++)
