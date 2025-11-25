@@ -51,15 +51,14 @@
             if (grammar.Rules.Count == 0)
             {
                 Console.WriteLine("No rules entered. Using example grammar:");
-                grammar.AddRule('S', "AB");
-                grammar.AddRule('S', "BC");
-                grammar.AddRule('A', "BA");
-                grammar.AddRule('A', "a");
-                grammar.AddRule('B', "CC");
-                grammar.AddRule('B', "b");
-                grammar.AddRule('C', "AB");
-                grammar.AddRule('C', "a");
-                startSymbol = "S";
+                grammar.AddRule('H', "E");
+                grammar.AddRule('E', "T+X");
+                grammar.AddRule('X', "ε");
+                grammar.AddRule('X', "+E");
+                grammar.AddRule('T', "i");
+                grammar.AddRule('T', "n");
+                grammar.AddRule('T', "(E)");
+                startSymbol = "H";
             }
 
             Console.WriteLine("\n=== Original Grammar ===");

@@ -5,6 +5,7 @@
         public Grammar CNFGrammar { get; private set; }
         public char StartSymbol { get; private set; }
         private int newNonTerminalCounter = 0;
+        private List<char> usedNewNonTerminals = [];
 
         public CNFConverter(Grammar grammar, char startSymbol)
         {
@@ -292,20 +293,21 @@
         private char GetNewNonTerminal()
         {
             string available = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray()
-                .Where(c => !CNFGrammar.Rules.ContainsKey(c))
+                .Where(c => !CNFGrammar.Rules.ContainsKey(c) && !usedNewNonTerminals.Contains(c))
                 .Aggregate("", (current, c) => current + c);
 
             foreach (char c in available)
             {
-                if (!CNFGrammar.Rules.ContainsKey(c))
+                if (!CNFGrammar.Rules.ContainsKey(c) && !usedNewNonTerminals.Contains(c))
                 {
+                    usedNewNonTerminals.Add(c);
                     return c;
                 }
             }
 
             while (true)
             {
-                char candidate = (char)('D' + newNonTerminalCounter);
+                char candidate = (char)('X' + newNonTerminalCounter);
                 newNonTerminalCounter++;
 
                 if (!CNFGrammar.Rules.ContainsKey(candidate) && candidate <= 'Z')
