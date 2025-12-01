@@ -310,7 +310,7 @@
                 char candidate = (char)('X' + newNonTerminalCounter);
                 newNonTerminalCounter++;
 
-                if (!CNFGrammar.Rules.ContainsKey(candidate) && candidate <= 'Z')
+                if (!CNFGrammar.Rules.ContainsKey(candidate))
                 {
                     return candidate;
                 }
