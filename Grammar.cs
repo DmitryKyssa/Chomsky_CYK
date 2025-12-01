@@ -40,8 +40,12 @@
 
         public void Print()
         {
-            foreach (KeyValuePair<char, List<string>> kvp in Rules.OrderBy(r => r.Key))
+            foreach (KeyValuePair<char, List<string>> kvp in Rules)
             {
+                if (kvp.Equals(Rules.First()))
+                {
+                    Console.Write("(Start Symbol) ");
+                }
                 Console.WriteLine($"{kvp.Key} -> {string.Join(" | ", kvp.Value)}");
             }
         }
